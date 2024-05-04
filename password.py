@@ -98,3 +98,89 @@ class PasswordManager:
                 messagebox.showinfo("Password", "No Such Username Exists !!")
         else:
             messagebox.showinfo("Passwords", "EMPTY LIST!!")
+    def get_list(self):
+        passwords = {}
+        try:
+            with open("passwords.txt", 'r') as f:
+                for line in f:
+                    data = line.split(' ')
+                    passwords[data[0]] = data[1]
+        except Exception as e:
+            print(f"Error: {e}")
+
+        if passwords:
+            mess = " \n"
+            for name, password in passwords.items():
+                mess += f"Username: {name} Password: {password}\n"
+            #messagebox.showinfo("Passwords", mess)
+            self.tbBox.insert(END,mess)
+
+        else:
+            messagebox.showinfo("Passwords", "Empty List !!")
+
+    def delete(self):
+        username = self.entryName.get()
+        passwords = {}
+        try:
+            with open("passwords.txt", 'r') as f:
+                for line in f:
+                    data = line.split(' ')
+                    passwords[data[0]] = data[1]
+        except Exception as e:
+            print(f"Error: {e}")
+        if username in passwords:
+            try:
+                mycursor.execute("DELETE FROM passwords WHERE username =%s",(username,))
+                conn.commit()
+            except mysql.connector.Error as err:
+                conn.rollback()
+            
+            temp_passwords = []
+            try:
+                with open("passwords.txt", 'r') as f:
+                    for line in f:
+                       data = line.split(' ')
+                       if data[0] != username:
+                            temp_passwords.append(f"{data[0]} {data[1]}")
+
+                with open("passwords.txt", 'w') as f:
+                    for line in temp_passwords:
+                        f.write(line)
+            
+                messagebox.showinfo("Success", f"User {username} deleted successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error deleting user {username}: {e}")
+        else:
+            messagebox.showerror("error","username doesnot exist")
+        
+    def update(self):
+        username = self.entryName.get()
+        password = self.entryPassword.get()
+        passwords = {}
+        try:
+            with open("passwords.txt", 'r') as f:
+                for line in f:
+                    data = line.strip().split(' ')
+                    passwords[data[0]] = data[1]
+        
+            if username in passwords:
+                    try:
+                        mycursor.execute("UPDATE passwords SET password = %s WHERE username=%s",(password,username))
+                        conn.commit()
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Error during update: {str(e)}")
+                    passwords[username] = password
+                    
+                    with open("passwords.txt", 'w') as f:
+                        for name, pwd in passwords.items():
+                            f.write(f"{name} {pwd}\n")
+                
+                    messagebox.showinfo("Success", "Password updated successfully")
+            else:
+                messagebox.showerror("Error", "Username does not exist")
+        except Exception as e:
+                messagebox.showerror("Error", f"Error updating password: {e}")
+
+root = Tk()
+app = PasswordManager(root)
+root.mainloop()
